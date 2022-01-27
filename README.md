@@ -1,4 +1,5 @@
 # TraderLadder
+Current version: 0.3.1
 Free SuperDOM Ladder for Order Flow traders on Ninjatrader.
 
 TraderLadder is a free order flow ladder for Ninjatrader v8. The SuperDOM column can display the following:
