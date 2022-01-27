@@ -123,6 +123,8 @@ namespace Gemify.OrderFlow
                 if (updateSlidingWindow)
                 {
                     SlidingWindowBuys.AddOrUpdate(close, trade, (price, existingTrade) => existingTrade = trade);
+                    // Update last buy
+                    LastBuy.AddOrUpdate(close, volume, (price, oldVolume) => volume);
                 }
                 TotalBuys.AddOrUpdate(close, volume, (price, oldVolume) => oldVolume + volume);
             }
@@ -147,6 +149,8 @@ namespace Gemify.OrderFlow
                 if (updateSlidingWindow)
                 {
                     SlidingWindowSells.AddOrUpdate(close, trade, (price, existingTrade) => existingTrade = trade);
+                    // Update last sell
+                    LastSell.AddOrUpdate(close, volume, (price, oldVolume) => volume);
                 }
                 TotalSells.AddOrUpdate(close, volume, (price, oldVolume) => oldVolume + volume);
             }
@@ -397,41 +401,14 @@ namespace Gemify.OrderFlow
         internal long GetLastBuySize(double price)
         {
             long lastSize = 0;
-
-            Trade current = GetBuysInSlidingWindow(price);
-            if (current != null && current.Size > 0) {
-                
-                long prevSize;
-                if (LastBuy.TryGetValue(price, out prevSize))
-                {
-                    lastSize = current.Size - prevSize;
-                }
-
-                long oldValue;
-                LastBuy.TryRemove(price, out oldValue);
-                LastBuy.TryAdd(price, current.Size);                
-            }
+            LastBuy.TryGetValue(price, out lastSize);
             return lastSize;
         }
 
         internal long GetLastSellSize(double price)
         {
             long lastSize = 0;
-
-            Trade current = GetSellsInSlidingWindow(price);
-            if (current != null && current.Size > 0)
-            {
-
-                long prevSize;
-                if (LastSell.TryGetValue(price, out prevSize))
-                {
-                    lastSize = current.Size - prevSize;
-                }
-
-                long oldValue;
-                LastSell.TryRemove(price, out oldValue);
-                LastSell.TryAdd(price, current.Size);                
-            }
+            LastSell.TryGetValue(price, out lastSize);
             return lastSize;
         }
 
@@ -444,7 +421,7 @@ namespace Gemify.OrderFlow
         internal void RemoveLastSell(double price)
         {
             long lastSize;
-            LastSell.TryRemove(price, out lastSize);            
+            LastSell.TryRemove(price, out lastSize); 
         }
     }
 }

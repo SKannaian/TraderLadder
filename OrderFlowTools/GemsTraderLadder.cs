@@ -68,7 +68,7 @@ namespace NinjaTrader.NinjaScript.SuperDomColumns
 
         #region Variable Decls
         // VERSION
-        private readonly string TraderLadderVersion = "v0.2";
+        private readonly string TraderLadderVersion = "v0.3.1";
 
         // UI variables
         private bool clearLoadingSent;
@@ -855,6 +855,7 @@ namespace NinjaTrader.NinjaScript.SuperDomColumns
                 orderFlow.RemoveLastSell(price);
                 return FormatText(size.ToString(), renderWidth, SellTextColor, TextAlignment.Right);
             }
+
             return null;
         }
 
