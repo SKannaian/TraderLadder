@@ -54,21 +54,52 @@ namespace NinjaTrader.NinjaScript.SuperDomColumns
             {
                 Text = Calculate(renderWidth, price);
             }
-        }
+        }        
 
         enum ColumnType
         {
-            VOLUME, ACCVAL, TOTALPL, PL, PRICE, SELLS, BUYS, SELL_SIZE, BUY_SIZE, TOTAL_SELLS, TOTAL_BUYS, BID, ASK, BID_CHANGE, ASK_CHANGE, OF_STRENGTH
+            [Description("Vol")]
+            VOLUME, 
+            [Description("Acc Val")]
+            ACCVAL, 
+            [Description("Sess P/L")]
+            TOTALPL, 
+            [Description("P/L")]
+            PL, 
+            [Description("Price")]
+            PRICE,
+            [Description("Sells")]
+            SELLS,
+            [Description("Buys")]
+            BUYS, 
+            [Description("Last")]
+            SELL_SIZE, 
+            [Description("Last")]
+            BUY_SIZE, 
+            [Description("Sess Sells")]
+            TOTAL_SELLS, 
+            [Description("Sess Buys")]
+            TOTAL_BUYS, 
+            [Description("Bid")]
+            BID, 
+            [Description("Ask")]
+            ASK, 
+            [Description("+/-")]
+            BID_CHANGE, 
+            [Description("+/-")]
+            ASK_CHANGE, 
+            [Description("OFS")]
+            OF_STRENGTH
         }
 
         enum ColumnSize
         {
             SMALL, MEDIUM, LARGE, XLARGE
-        }
+        }         
 
         #region Variable Decls
         // VERSION
-        private readonly string TraderLadderVersion = "v0.3.1";
+        private readonly string TraderLadderVersion = "v0.3.2";
 
         // UI variables
         private bool clearLoadingSent;
@@ -147,6 +178,8 @@ namespace NinjaTrader.NinjaScript.SuperDomColumns
                 SellImbalanceColor = Brushes.Magenta;
                 BuyImbalanceColor = Brushes.Cyan;
                 LastTradeColor = Brushes.White;
+                HeaderRowColor = Brushes.DimGray;
+                HeadersTextColor = Brushes.White;
 
                 DisplayVolume = true;
                 DisplayVolumeText = true;
@@ -590,6 +623,10 @@ namespace NinjaTrader.NinjaScript.SuperDomColumns
                     cellColor = CurrentPriceRowColor;
                 }
 
+                // Headers row
+                if (row.Price == SuperDom.UpperPrice) {
+                    cellColor = HeaderRowColor;
+                }
 
                 // If in position, show MFE and MAE
                 if (SuperDom.Position != null)
@@ -603,27 +640,34 @@ namespace NinjaTrader.NinjaScript.SuperDomColumns
                 dc.DrawRectangle(cellColor, null, rect);
                 dc.DrawLine(gridPen, new Point(-gridPen.Thickness, rect.Bottom), new Point(renderWidth - halfPenWidth, rect.Bottom));
                 dc.DrawLine(gridPen, new Point(rect.Right, verticalOffset), new Point(rect.Right, rect.Bottom));
-                if (colDef.ColumnType == ColumnType.VOLUME && colDef.Text != null)
-                {
-                    long volumeAtPrice = colDef.Text.Text == null ? 0 : long.Parse(colDef.Text.Text);
-                    double totalWidth = cellWidth * ((double)volumeAtPrice / maxVolume);
-                    double volumeWidth = totalWidth == cellWidth ? totalWidth - gridPen.Thickness * 1.5 : totalWidth - halfPenWidth;
-
-                    if (volumeWidth >= 0)
-                    {
-                        double xc = x + (cellWidth - volumeWidth);
-                        dc.DrawRectangle(VolumeColor, null, new Rect(xc, verticalOffset + halfPenWidth, volumeWidth, rect.Height - gridPen.Thickness));
-                    }
-
-                    if (!DisplayVolumeText)
-                    {
-                        colDef.Text = null;
-                    }
+                
+                if (row.Price == SuperDom.UpperPrice) {
+                    FormattedText header = FormatText(colDef.ColumnType.GetEnumDescription(), renderWidth, HeadersTextColor, TextAlignment.Left);
+                    dc.DrawText(header, new Point(rect.Left + 10, verticalOffset + (SuperDom.ActualRowHeight - header.Height) / 2));
                 }
-                // Write the column text
-                if (colDef.Text != null) 
-                {
-                    dc.DrawText(colDef.Text, new Point(colDef.Text.TextAlignment == TextAlignment.Left ? rect.Left + 5 : rect.Right - 5, verticalOffset + (SuperDom.ActualRowHeight - textHeight) / 2));
+                else {
+                    if (colDef.ColumnType == ColumnType.VOLUME && colDef.Text != null)
+                    {
+                        long volumeAtPrice = colDef.Text.Text == null ? 0 : long.Parse(colDef.Text.Text);
+                        double totalWidth = cellWidth * ((double)volumeAtPrice / maxVolume);
+                        double volumeWidth = totalWidth == cellWidth ? totalWidth - gridPen.Thickness * 1.5 : totalWidth - halfPenWidth;
+
+                        if (volumeWidth >= 0)
+                        {
+                            double xc = x + (cellWidth - volumeWidth);
+                            dc.DrawRectangle(VolumeColor, null, new Rect(xc, verticalOffset + halfPenWidth, volumeWidth, rect.Height - gridPen.Thickness));
+                        }
+
+                        if (!DisplayVolumeText)
+                        {
+                            colDef.Text = null;
+                        }
+                    }
+                    // Write the column text
+                    if (colDef.Text != null) 
+                    {
+                        dc.DrawText(colDef.Text, new Point(colDef.Text.TextAlignment == TextAlignment.Left ? rect.Left + 5 : rect.Right - 5, verticalOffset + (SuperDom.ActualRowHeight - colDef.Text.Height) / 2));
+                    }
                 }
 
                 dc.Pop();
@@ -1147,6 +1191,32 @@ namespace NinjaTrader.NinjaScript.SuperDomColumns
             get { return NinjaTrader.Gui.Serialize.BrushToString(LastTradeColor); }
             set { LastTradeColor = NinjaTrader.Gui.Serialize.StringToBrush(value); }
         }
+
+        [XmlIgnore]
+        [NinjaScriptProperty]
+        [Display(Name = "Header Row Color", Description = "Header row color.", Order = 14, GroupName = "Visual")]
+        public Brush HeaderRowColor
+        { get; set; }
+
+        [Browsable(false)]
+        public string HeaderRowColorSerialize
+        {
+            get { return NinjaTrader.Gui.Serialize.BrushToString(HeaderRowColor); }
+            set { HeaderRowColor = NinjaTrader.Gui.Serialize.StringToBrush(value); }
+        }        
+
+        [XmlIgnore]
+        [NinjaScriptProperty]
+        [Display(Name = "Headers Text Color", Description = "Headers text color.", Order = 15, GroupName = "Visual")]
+        public Brush HeadersTextColor
+        { get; set; }
+
+        [Browsable(false)]
+        public string HeadersTextColorSerialize
+        {
+            get { return NinjaTrader.Gui.Serialize.BrushToString(HeadersTextColor); }
+            set { HeadersTextColor = NinjaTrader.Gui.Serialize.StringToBrush(value); }
+        }        
 
 
         // =========== P/L Columns
